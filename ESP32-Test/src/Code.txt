@@ -1,0 +1,334 @@
+// /* Preprocessing : #include #define */
+// #include <Arduino.h>
+// #include <WiFi.h>
+// #include <FirebaseESP32.h>
+// #include <Adafruit_Sensor.h>
+// #include <DHT.h>
+// #include <DHT_U.h>
+// #include <Wire.h>
+// #include <LiquidCrystal_I2C.h>
+// #include <ESP32Servo.h>
+// #include <NTPClient.h>
+
+
+// /* Provide the RTDB payload printing info and other helper functions.*/
+// #include <addons/RTDBHelper.h>
+
+// /* 1. Define the WiFi credentials */
+// #define WIFI_SSID "NhatroDongAnh_T2"
+// #define WIFI_PASSWORD "0935211678"
+// /* 2. Define Pin of Schematic */
+// #define Gas_PIN 32
+// #define DHT11_PIN 33
+// #define Digital_Gas 35
+// #define DHTType DHT11
+// #define RedLed 27
+// #define I2C_SDA 12
+// #define I2C_SCL 13
+
+
+
+// /* 3. If work with RTDB, define the RTDB URL and database secret */
+// #define DATABASE_URL "fir-esp32-17707-default-rtdb.firebaseio.com"
+// #define DATABASE_SECRET "R0B0EXUlahdmd2QDD75f112CEAg1MWvKkOcKxSD5"
+
+
+// /* 4. Define the function name */
+// float GasSensor();
+// void DHT11Sensor(float& Temp, float& Humi);
+// void LCD_DHT11();
+// void IRAM_ATTR gasDetectISR();
+// int Get_Day();
+// int Get_Hour();
+// int Get_Minute();
+// int Get_Second();
+// // void Switch_LCD();
+// // void LCD_Realtime();
+// FirebaseData firebase_smthome;
+// LiquidCrystal_I2C LCD(0x27,16,2);
+// DHT_Unified DHT(DHT11_PIN,DHTType);
+
+// /* 4, Define the FirebaseAuth data for authentication data */
+// FirebaseAuth auth;
+
+// /* Define the FirebaseConfig data for config data */
+// FirebaseConfig config;
+
+// /*Define variables name and size*/
+// unsigned long dataMillis1 = 0;
+// unsigned long dataMillis2 = 0;
+// unsigned long dataMillis3 = 0;
+// boolean Set_interrupt = false;
+// boolean Set_RedAlertTime = false;
+// boolean Set_DataReceive = false;
+// uint32_t delayms ;
+// String path ="/";
+// WiFiUDP User_RT;
+// NTPClient RT(User_RT,"2.asia.pool.ntp.org",7*3600);
+
+
+
+
+// void setup()
+// {
+// /* Declration Serial Monitor */
+//     Serial.begin(115200);
+//     delay(200); /* Create delaytime */
+
+// /*DHT11 sensor starting*/
+//     sensor_t sensor ;
+//     delayms = sensor.min_delay /1000;
+//     DHT.begin();
+
+// /* LCD I2C starting */
+//     Wire.begin(I2C_SDA,I2C_SCL);
+//     LCD.init();
+//     LCD.backlight();
+//     LCD.begin(12,13);
+
+// /* Config the Interrupt */
+//     pinMode(RedLed, OUTPUT);
+//     pinMode(Digital_Gas,INPUT);
+//     attachInterrupt(digitalPinToInterrupt(Digital_Gas), gasDetectISR, RISING);
+
+// /* Intialization the Get realtime */
+//     RT.begin();
+
+// /* Config the LCD */
+
+// /*Setup connect Wifi for ESP32*/
+//     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+//     Serial.print("Connecting to Wi-Fi");
+//     while (WiFi.status() != WL_CONNECTED)
+//     {
+//         Serial.print(".");
+//         delay(300);
+//     }
+//     Serial.println();
+//     Serial.print("Connected with IP: ");
+//     Serial.println(WiFi.localIP());
+//     Serial.println();
+//     Serial.printf("Firebase Client v%s\n\n", FIREBASE_CLIENT_VERSION);
+
+// /* Assign the database URL and database secret(required) */
+//     config.database_url = DATABASE_URL;
+//     config.signer.tokens.legacy_token = DATABASE_SECRET;
+//     Firebase.reconnectNetwork(true);
+//     firebase_smthome.setBSSLBufferSize(4096 , 1024 );
+
+// /* Initialize the library and connecting RTDB */
+//     Firebase.begin(&config, &auth); /*Firebase.begin(DATABASE_URL, DATABASE_SECRET);*/
+//     if (Firebase.ready())
+//     {
+//      if (!Firebase.beginStream(firebase_smthome, path))
+//     {
+//       Serial.println("Reason: " + firebase_smthome.errorReason());
+//       Serial.println();
+//     }
+//       Serial.println("Connecting Success");
+//       Serial.print("Connect with IP: ");
+//       Serial.println(WiFi.localIP());
+//       Serial.println();
+//     }
+
+// }
+
+// void loop()
+// {
+
+//     LCD_DHT11();
+//     // LCD_Realtime();
+//     /*Task of Interrupt*/
+//     if (Set_interrupt==true)
+//     {
+//         Serial.println("Red Alert, Red Alert...");
+//         Set_RedAlertTime = true;
+//         Set_interrupt = false;
+//     }
+//     if (Set_RedAlertTime == true)
+//     {
+//     /* Create time delay by millis */
+//     unsigned long currentTime1 = millis();
+
+//         if (currentTime1 - dataMillis1 >=2000)
+//         {
+//             digitalWrite(RedLed, !digitalRead(RedLed)); // Đặt trạng thái của LED
+//             dataMillis1 = currentTime1;
+//         }
+//         if (currentTime1 > 3000)
+//         {
+//             digitalWrite(RedLed,LOW);
+//             Set_RedAlertTime = false;
+//         }
+//     }
+//     /* Create time delay by millis */
+//     unsigned long currentTime2 = millis();
+//     /* Get and set Data to Firebase */
+//     if (currentTime2-dataMillis2 >1000)
+//     {
+//         /* Create the time delay by millis */
+//         dataMillis2 =currentTime2;
+//         int Day = Get_Day();
+//         int Hour = Get_Hour();
+//         Serial.print("Day: ");
+//         Serial.print(Day );
+//         Serial.print(" Time: ");
+//         Serial.print(Hour);
+//         /* Read and send Gas sensor value to RTDB */
+//         float value_sensor = GasSensor();
+//         Serial.printf("Gia tri Gas sensor: ");
+//         Serial.println(value_sensor);
+//         if (isnan(value_sensor))
+//         {
+//             if (Firebase.setString(firebase_smthome, "/Gassensor/Notice", "Gas Sensor Error !")) /* Firebase.setInt(firebase_smthome,path +"/Key on Firebase",Data); */
+//             {
+//             Serial.println("Gas Sensor Error !");
+//             }
+//         }
+//         else
+//         {
+
+//             Serial.printf("Gas Sensor operating!\n");
+//             Firebase.setString(firebase_smthome, "/Gassensor/Notice",String(value_sensor));
+//         }
+
+//         /* Read and send DHT11 sensor value to RTDB */
+//         float temperature;
+//         float humidity;
+//         DHT11Sensor(temperature, humidity);
+//         Serial.print("Temperature: ");
+//         Serial.println(temperature);
+//         Serial.print("Humidity: ");
+//         Serial.println(humidity);
+//         Firebase.setString(firebase_smthome, "/DHT11Sensor/Humi",  String(humidity));
+//         Firebase.setString(firebase_smthome, "/DHT11Sensor/Temp",  String(temperature));
+
+//         /* Get data from RTDB */
+//         if (Firebase.getString(firebase_smthome, "/Led/Led1Status")) {
+//             String s = firebase_smthome.stringData();
+//             if (s=="1")
+//             {
+//                 Set_DataReceive =true;
+//             }
+//             if (s=="0")
+//             {
+//                 Set_DataReceive = false;
+//             }
+//             Serial.println("get: " + s);
+//         }
+// }
+//     /* Output LED */
+//     if (Set_DataReceive==true)
+//     {
+//         digitalWrite(RedLed,HIGH);
+//         Serial.println("Bat led");
+//     }
+//     else
+//     {
+//         digitalWrite(RedLed,LOW);
+//         Serial.println("Tat led");
+//     }
+
+// }
+// /* LCD_Switch*/
+// // void Switch_LCD(uint8_t Switch)
+// // {
+// //     switch (Switch)
+// //     {
+// //     case 1:
+// //         LCD_Realtime();
+// //         break;
+// //     case 2:
+// //         LCD_DHT11();
+// //         break;
+// //     }
+// // }
+
+// /* Function: Read Gas sensor value */
+// float GasSensor(){
+//     float value = analogRead(Gas_PIN);
+
+//     return value;
+// }
+// /* Function: Read DHT11 sensor value */
+// void DHT11Sensor(float& Temp, float& Humi)
+// {
+//     delay(delayms);
+//     sensors_event_t event;
+//     DHT.temperature().getEvent(&event);
+//     Temp = event.temperature;
+//     DHT.humidity().getEvent(&event);
+//     Humi = event.relative_humidity;
+// }
+// /* Function Interrupt */
+// void IRAM_ATTR gasDetectISR()
+// {
+//     Set_interrupt = true;
+// }
+// void LCD_DHT11()
+// {
+//     float temperature1;
+//     float humidity1;
+//     DHT11Sensor(temperature1, humidity1);
+//     LCD.clear();
+//     LCD.setCursor(0,0);
+//     LCD.print("Temp: ");
+//     LCD.print(temperature1);
+//     LCD.setCursor(0,1);
+//     LCD.print("Humi: ");
+//     LCD.print(humidity1);
+//     LCD.print(" %");
+// }
+
+// /* Get realtime in server when execute connect */
+// int Get_Day()
+// {
+//     uint8_t Day;
+//     Day =RT.getDay();
+//     RT.update();
+//     return Day;
+// }
+// int Get_Hour()
+// {
+//     uint8_t Hour;
+//     Hour = RT.getHours();
+//     RT.update();
+//     return Hour;
+// }
+// int Get_Minute()
+// {
+//     uint8_t Minute;
+//     Minute =RT.getMinutes();
+//     RT.update();
+//     return Minute;
+// }
+// int Get_Second()
+// {
+//     uint8_t Second;
+//     Second = RT.getSeconds();
+//     RT.update();
+//     return Second;
+// }
+// // void LCD_Realtime()
+// // {
+// //     uint8_t Day;
+// //     uint8_t Hour;
+// //     uint8_t Minute;
+// //     uint8_t Second;
+
+// //     Day = Get_Day();
+// //     Hour = Get_Hour();
+// //     Minute = Get_Minute();
+// //     Second = Get_Second();
+
+// //     LCD.clear();
+// //     LCD.setCursor(0,1);
+// //     LCD.print("Day: ");
+// //     LCD.print(Day);
+// //     LCD.setCursor(0,2);
+// //     LCD.print("Time: ");
+// //     LCD.print(Hour,Minute,Second);
+// // }
+
+
+
