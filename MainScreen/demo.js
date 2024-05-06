@@ -46,13 +46,25 @@ function logout_function() {
 function toggleButtonClick(numlight) {
     var Led1Status = document.getElementById('toggle'+ numlight).checked;
     var firebaseRef = firebase.database().ref().child("Led").child("Led" + numlight+ "Status");
+    var slider = document.getElementById("slider"+numlight);
+    var output = document.getElementById("slider-value"+numlight);
+
+
 
     if(Led1Status == true){    // post to firebase
         // firebaseRef.set("100");
-        firebaseRef.set(parseInt("100"));
+        firebaseRef.set(parseInt("255"))
+        slider.value = 255;
+        output.innerHTML = "Light "+ numlight + ": " + slider.value;
+
+
+
     } else {
         // firebaseRef.set("0");
         firebaseRef.set(parseInt("0"));
+        slider.value = 0;
+        output.innerHTML = "Light "+ numlight + ": " + slider.value;
+        
     }
 }
 // Light 1
@@ -72,17 +84,17 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 // Light 2
 document.addEventListener("DOMContentLoaded", function() {
-    var slider = document.getElementById("slider2");
-    var output = document.getElementById("slider-value2");
+    var slider1 = document.getElementById("slider2");
+    var output1 = document.getElementById("slider-value2");
   
-    output.innerHTML = slider.value;
+    output1.innerHTML = slider1.value;
   
-    slider.oninput = function() {
-      output.innerHTML = "Light 2: " + this.value;
-      var sliderValue = parseInt(this.value);
+    slider1.oninput = function() {
+      output1.innerHTML = "Light 2: " + this.value;
+      var sliderValue1 = parseInt(this.value);
   
       var firebaseRef = firebase.database().ref().child("Led").child("Led2Status");
-      firebaseRef.set(sliderValue); // Gửi giá trị đến Firebase
+      firebaseRef.set(sliderValue1); // Gửi giá trị đến Firebase
     }
   });
 
@@ -224,10 +236,10 @@ function turnonDen(){
     var firebaseRef1 = firebase.database().ref().child("Led").child("Led2Status");
     var firebaseRef2 = firebase.database().ref().child("Led").child("Led3Status");
     var firebaseRef3 = firebase.database().ref().child("Led").child("Led4Status");
-        firebaseRef0.set(parseInt("100"))
-        firebaseRef1.set(parseInt("100"))
-        firebaseRef2.set(parseInt("100"))
-        firebaseRef3.set(parseInt("100"))
+        firebaseRef0.set(parseInt("255"))
+        firebaseRef1.set(parseInt("255"))
+        firebaseRef2.set(parseInt("255"))
+        firebaseRef3.set(parseInt("255"))
 }
 function turnoffDen(){
     var firebaseRef0 = firebase.database().ref().child("Led").child("Led1Status");
@@ -241,7 +253,7 @@ function turnoffDen(){
 }
 function turnonDen1(){
     var firebaseRef = firebase.database().ref().child("Led").child("Led1Status");
-        firebaseRef.set(parseInt("100"))
+        firebaseRef.set(parseInt("255"))
 }
 function turnoffDen1(){
     var firebaseRef = firebase.database().ref().child("Led").child("Led1Status");
@@ -249,7 +261,7 @@ function turnoffDen1(){
 }
 function turnonDen2(){
     var firebaseRef = firebase.database().ref().child("Led").child("Led2Status");
-        firebaseRef.set(parseInt("100"))
+        firebaseRef.set(parseInt("255"))
 }
 function turnoffDen2(){
     var firebaseRef = firebase.database().ref().child("Led").child("Led2Status");
