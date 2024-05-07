@@ -12,7 +12,7 @@ void ChangeCode();
 void GetNewCode1();
 void GetNewCode2();
 
-int digital_pin = 10; // Push Button
+int digital_pin = 49; // Push Button
 // int Lock = 9;         // relay
 uint8_t Var_Open = 0;
 const byte numRows = 4; // number of rows on the keypad
@@ -36,8 +36,8 @@ char check2[sizeof(code)]; // Where the new key is stored again so it's compared
 short a = 0;
 uint16_t i = 0, s = 0, j = 0; // Variables used later
 
-byte rowPins[numRows] = {26, 28, 30, 32}; // Rows 0 to 3 //if you modify your pins you should modify this too
-byte colPins[numCols] = {34, 36, 38, 40}; // Columns 0 to 3
+byte rowPins[numRows] = {31, 33, 35, 37}; // Rows 0 to 3 //if you modify your pins you should modify this too
+byte colPins[numCols] = {39, 41, 43, 45}; // Columns 0 to 3
 // byte rowPins[ROWS] = {26,28,30,32}; // R1,R2,R3,R4
 // byte colPins[COLS] = {34,36,38,40}; // C1,C2,C3,C4
 
@@ -137,11 +137,11 @@ void loop()
   }
   if (Var_Open == 1)
   {
-    servo.write(90);
+    servo.write(0);
   }
   else
   {
-    servo.write(0);
+    servo.write(90);
   }
 
   // if(digitalRead(Button)==HIGH)
@@ -151,7 +151,7 @@ void loop()
   if (digitalRead(digital_pin) == LOW)
   { // To change the code it calls the changecode function
     lcd.clear();
-    servo.write(0);
+    servo.write(90);
     lcd.print("Locked: Press * to ");
     lcd.setCursor(0, 1);
     lcd.print("to unlock!!");
@@ -294,5 +294,5 @@ void OpenDoor()
 { // Lock opening function open for 3s
   lcd.clear();
   lcd.print("Unlocked:Welcome");
-  servo.write(90);
+  servo.write(0);
 }

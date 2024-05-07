@@ -27,19 +27,24 @@
 
 /* Define the Wifi Credentials */
 
-#define WIFI_SSID "NhatroDongAnh_T2" /* Define the WiFi credentials */
-#define WIFI_PASSWORD "0935211678"   /* Define the WiFi Password */
+#define WIFI_SSID "LINH"         /* Define the WiFi credentials */
+#define WIFI_PASSWORD "06062001" /* Define the WiFi Password */
 
 /* Define Pin Sensor of Schematic - Input */
 
-#define TCRT500_Analog_Sensor_Pin GPIO_NUM_36 /* Define the DHT11 Sensor Pin */
-#define Digital_Gas_Pin GPIO_NUM_34           /* Define the Digital Gas Sensor Pin */
-#define Gas_Analog_Pin GPIO_NUM_39            /* Define the Analog Gas Sensor Pin */
-#define Flame_Analog_Sensor_Pin GPIO_NUM_35   /* Define the Analog Flame Sensor Pin */
-#define Fan_Pin GPIO_NUM_15
-// #define Flame_Digital_Sensor_Pin 32                       /* Define the Digital Flame Sensor Pin */
-#define DHT11_Pin GPIO_NUM_33                  /* Define the Analog TCRT5000 Sensor Pin */
+#define Digital_Gas_Pin GPIO_NUM_13 /* Define the Digital Gas Sensor Pin */
+#define Gas_Analog_Pin GPIO_NUM_36  /* Define the Analog Gas Sensor Pin */
+
+#define DHT11_Pin GPIO_NUM_32                /* Define the Analog TCRT5000 Sensor Pin */
+
+#define Flame_Analog_Sensor_Pin GPIO_NUM_35  /* Define the Analog Flame Sensor Pin */
+#define Flame_Digital_Sensor_Pin GPIO_NUM_12 /* Define the Digital Flame Sensor Pin */
+
+#define TCRT500_Analog_Sensor_Pin GPIO_NUM_33  /* Define the DHT11 Sensor Pin */
 #define TCRT500_Digital_Sensor_Pin GPIO_NUM_25 /* Define the Digital TCRT5000 Sensor Pin */
+
+#define Fan_Pin GPIO_NUM_15
+#define Buzzy_Pin GPIO_NUM_2
 
 #define I2C_SDA 21 /* Define the SDA LCD Pin */
 #define I2C_SCL 22 /* Define the SCL LCD Pin */
@@ -80,6 +85,10 @@ void LCD_Time();
  * brief: Function to display time on LCD.
  */
 void IRAM_ATTR gasDetectISR();
+/*
+ * brief: Function to interrupt of Gas sensor.
+ */
+void IRAM_ATTR FlameDetectISR();
 /*
  * brief: Function to interrupt of Gas sensor.
  */
@@ -133,7 +142,7 @@ const uint16_t freq = 5000;    /* Config the frequency for PWM*/
 const uint8_t ledChannel1 = 3; /* Config the channel 0 for PWM*/
 const uint8_t ledChannel2 = 4; /* Config the channel 1 for PWM*/
 const uint8_t resolution = 8;  /* Config the resolution for PWM*/
-const uint8_t Led_02_Pin = 18; /* Config the Led 2 Pin for PWM*/
+const uint8_t Led_02_Pin = 23; /* Config the Led 2 Pin for PWM*/
 const uint8_t Led_01_Pin = 19; /* Config the Led 1 Pin for PWM*/
 
 void setup()
@@ -149,16 +158,19 @@ void setup()
     /* Config the ADC channel */
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(ADC1_CHANNEL_7, ADC_ATTEN_DB_11);
-    adc1_config_channel_atten(ADC1_CHANNEL_3, ADC_ATTEN_DB_11);
+    // adc1_config_channel_atten(ADC1_CHANNEL_3, ADC_ATTEN_DB_11);
     adc1_config_channel_atten(ADC1_CHANNEL_0, ADC_ATTEN_DB_11);
 
     /* PinMode */
+    pinMode(Flame_Digital_Sensor_Pin,INPUT_PULLUP);
     pinMode(Flame_Analog_Sensor_Pin, INPUT);
     pinMode(Gas_Analog_Pin, INPUT);
+    pinMode(Digital_Gas_Pin,INPUT_PULLUP);
     pinMode(TCRT500_Analog_Sensor_Pin, INPUT);
     pinMode(TCRT500_Digital_Sensor_Pin, INPUT_PULLUP);
     pinMode(DHT11_Pin, INPUT);
     pinMode(Fan_Pin, OUTPUT);
+    pinMode(Buzzy_Pin, INPUT);
 
     // Configure LED PWM functionalitites
     ledcSetup(ledChannel1, freq, resolution);
@@ -187,8 +199,8 @@ void setup()
     LCD.clear();
 
     /* Config the Interrupt */
-    attachInterrupt(digitalPinToInterrupt(Digital_Gas_Pin), gasDetectISR, RISING);
-
+    attachInterrupt(digitalPinToInterrupt(Digital_Gas_Pin), gasDetectISR, HIGH);
+    attachInterrupt(digitalPinToInterrupt(Flame_Digital_Sensor_Pin), FlameDetectISR, HIGH);
     /*Setup connect Wifi for ESP32*/
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     Serial.print("Connecting to Wi-Fi");
@@ -260,15 +272,15 @@ void loop()
     /*Task of Interrupt*/
     if (Set_interrupt == true)
     {
-        // Serial.println("Red Alert, Red Alert...");
+        Serial.println("Red Alert, Red Alert...");
         Set_RedAlertTime = true;
     }
     if (Set_RedAlertTime == true)
     {
-        digitalWrite(Led_01_Pin, HIGH); // Set the led status in Red Alert Case.
+        digitalWrite(Buzzy_Pin, HIGH); // Set the led status in Red Alert Case.
         if (digitalRead(Digital_Gas_Pin) == 1)
         {
-            digitalWrite(Led_01_Pin, LOW);
+            digitalWrite(Buzzy_Pin, LOW);
             Set_RedAlertTime = false;
             Set_interrupt = false;
         }
@@ -287,6 +299,8 @@ void loop()
         TCRT_digital = TCRT5000DigitalSensor();
         Serial.printf("Gia tri Gas sensor: ");
         Serial.println(Gas_value);
+        Serial.printf("Gia tri Flame sensor: ");
+        Serial.println(Flame_value);
         // Serial.printf("Gia tri Flame sensor: ");
         // Serial.println(Flame_value);
         // Serial.printf("Gia tri TCRT5000 sensor: ");
@@ -382,7 +396,7 @@ void loop()
             String s6 = firebase_smthome.stringData();
             Set_DataReceive6 = s6;
             Serial.println("Password: " + Set_DataReceive6);
-            Serial2.print(Set_DataReceive6 +"/");
+            Serial2.print(Set_DataReceive6 + "/");
         }
         /* Get data from RTDB for Door */
         if (Firebase.getInt(firebase_smthome, "Cua/Cua1Status/"))
@@ -436,7 +450,7 @@ void loop()
 /* Function: Read Gas sensor value */
 uint16_t GasSensor()
 {
-    __volatile uint16_t Gas_value = adc1_get_raw(ADC1_CHANNEL_3);
+    __volatile uint16_t Gas_value = adc1_get_raw(ADC1_CHANNEL_0);
 
     return Gas_value;
 }
@@ -486,6 +500,10 @@ void Control_Fan(bool n)
 
 /* Function Interrupt */
 void IRAM_ATTR gasDetectISR()
+{
+    Set_interrupt = true;
+}
+void IRAM_ATTR FlameDetectISR()
 {
     Set_interrupt = true;
 }
