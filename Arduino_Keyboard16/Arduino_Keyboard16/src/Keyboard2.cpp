@@ -7,12 +7,13 @@
 #include <Servo.h>
 
 void OpenDoor();
+void CloseDoor();
 void ReadCode();
 void ChangeCode();
 void GetNewCode1();
 void GetNewCode2();
 
-int digital_pin = 10; // Push Button
+int light_sensor_pin = 49; // Push Button
 // int Lock = 9;         // relay
 uint8_t Var_Open = 0;
 const byte numRows = 4; // number of rows on the keypad
@@ -36,8 +37,8 @@ char check2[sizeof(code)]; // Where the new key is stored again so it's compared
 short a = 0;
 uint16_t i = 0, s = 0, j = 0; // Variables used later
 
-byte rowPins[numRows] = {26, 28, 30, 32}; // Rows 0 to 3 //if you modify your pins you should modify this too
-byte colPins[numCols] = {34, 36, 38, 40}; // Columns 0 to 3
+byte rowPins[numRows] = {31, 33, 35, 37}; // Rows 0 to 3 //if you modify your pins you should modify this too
+byte colPins[numCols] = {39, 41, 43, 45}; // Columns 0 to 3
 // byte rowPins[ROWS] = {26,28,30,32}; // R1,R2,R3,R4
 // byte colPins[COLS] = {34,36,38,40}; // C1,C2,C3,C4
 
@@ -61,7 +62,7 @@ void setup()
   delay(1000);
   lcd.clear();
   lcd.print("Press* to unlock"); // What's written on the lcd you can change
-  pinMode(digital_pin, INPUT_PULLUP);
+  pinMode(light_sensor_pin, INPUT_PULLUP);
   // pinMode(Lock, OUTPUT);
   servo.attach(servoPin);
 
@@ -83,18 +84,28 @@ void loop()
     ReadCode();               // Getting code function
     if (a == sizeof(code))
     {
-      OpenDoor(); // The ReadCode function assign a value to a (it's correct when it has the size of the code array)
+        OpenDoor(); // The ReadCode function assign a value to a (it's correct when it has the size of the code array)   
+        delay(2000);
+        lcd.clear();
+        lcd.print("Wellcom!");
+        lcd.setCursor(0, 1);
+        lcd.print("Press B to lock"); 
     }
     else
     {
-      lcd.clear();
-      lcd.print("Wrong code !"); // Message to print when the code is wrong
+        lcd.clear();
+        lcd.print("Wrong code !"); // Message to print when the code is wrong
+        delay(2000);
+        lcd.clear();
+        lcd.print("My Home");
+        lcd.setCursor(0, 1);
+        lcd.print("Press* to unlock"); // Return to standby mode it's the message do display when waiting
     }
-    delay(2000);
-    lcd.clear();
-    lcd.print("My Home");
-    lcd.setCursor(0, 1);
-    lcd.print("Press* to unlock"); // Return to standby mode it's the message do display when waiting
+  }
+
+  if (keypressed == 'B')
+  {
+    CloseDoor();
   }
 
   if (keypressed == '#')
@@ -123,9 +134,14 @@ void loop()
       Serial.println("Open");
       Var_Open = 1;
     }
-    else
+    else if (b2 == "0")
     {
       Serial.println("Close");
+      Var_Open = 2;
+    }
+    else
+    {
+      Serial.println("....");
       Var_Open = 0;
     }
     int count = 4;
@@ -137,21 +153,23 @@ void loop()
   }
   if (Var_Open == 1)
   {
-    servo.write(90);
-  }
-  else
-  {
     servo.write(0);
+  }
+  else if (Var_Open == 2)
+  {
+    servo.write(100);
   }
 
   // if(digitalRead(Button)==HIGH)
   // {
   //     digitalWrite(Lock, HIGH);             //Opening by the push button
   // }
-  if (digitalRead(digital_pin) == LOW)
+  if (digitalRead(light_sensor_pin) == LOW)
   { // To change the code it calls the changecode function
     lcd.clear();
-    servo.write(0);
+    delay(3000);
+    servo.write(100);
+    Var_Open = 0;
     lcd.print("Locked: Press * to ");
     lcd.setCursor(0, 1);
     lcd.print("to unlock!!");
@@ -294,5 +312,15 @@ void OpenDoor()
 { // Lock opening function open for 3s
   lcd.clear();
   lcd.print("Unlocked:Welcome");
-  servo.write(90);
+  servo.write(0);
+  Var_Open = 0;
+}
+void CloseDoor()
+{ // Lock opening function open for 3s
+  lcd.clear();
+  lcd.print("My Home");
+  lcd.setCursor(0, 1);
+  lcd.print("Press* to unlock"); // Return to standby mode it's the message do display when waiting
+  servo.write(100);
+  Var_Open = 0;
 }
