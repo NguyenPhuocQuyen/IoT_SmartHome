@@ -1,4 +1,3 @@
-
 function loaddata(){
     // Đèn 1 
     var firebaseRef = firebase.database().ref().child("Led").child("Led1Status");
