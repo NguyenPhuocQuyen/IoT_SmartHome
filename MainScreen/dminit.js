@@ -34,15 +34,23 @@ function loaddata(){
     });
 
     //Quạt
+    // var firebaseRef = firebase.database().ref().child("Span").child("Span1Status");
+    // // Attach a listener for changes to the data
+    // firebaseRef.on("value", function(snapshot) {
+    //     var SpanStatus = snapshot.val(); // Get the value of the snapshot
+    //     var Span1Status = document.getElementById('toggleFan1');
+    //     Span1Status.checked = (SpanStatus==0)
+    //     console.log("Quat1Status:", Span1Status.checked); // Log the value to the console
+    // });
+
+    
     var firebaseRef = firebase.database().ref().child("Span").child("Span1Status");
     // Attach a listener for changes to the data
     firebaseRef.on("value", function(snapshot) {
         var SpanStatus = snapshot.val(); // Get the value of the snapshot
-        var Span1Status = document.getElementById('toggleFan1');
-        Span1Status.checked = (SpanStatus==0)
-        console.log("Quat1Status:", Span1Status.checked); // Log the value to the console
+        var Span1Element = document.getElementById('toggleFan1');
+        Span1Element.checked = (SpanStatus == 1); // Cập nhật trạng thái của nút dựa trên dữ liệu từ Firebase
     });
-
     //Rèm
     var firebaseRef = firebase.database().ref().child("Rem").child("Rem1Status");
     // Attach a listener for changes to the data

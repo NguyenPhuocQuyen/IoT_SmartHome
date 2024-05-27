@@ -91,21 +91,35 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // // Quạt
+// function toggleButtonClickFan(numspan) {
+//   var Span1Status = document.getElementById("toggleFan" + numspan).checked;
+//   var firebaseRef = firebase
+//     .database()
+//     .ref()
+//     .child("Span")
+//     .child("Span" + numspan + "Status");
+
+//   if (Span1Status == true) {
+//     // post to firebase
+//     // firebaseRef.set("1");
+//     firebaseRef.set(parseInt("0"));
+//   } else {
+//     // firebaseRef.set("0");
+//     firebaseRef.set(parseInt("1"));
+//   }
+// }
 function toggleButtonClickFan(numspan) {
   var Span1Status = document.getElementById("toggleFan" + numspan).checked;
-  var firebaseRef = firebase
-    .database()
-    .ref()
-    .child("Span")
-    .child("Span" + numspan + "Status");
+  var firebaseURL = "https://iotsmarthome-e9c19-default-rtdb.firebaseio.com/Span/Span" + numspan + "Status.json";
 
-  if (Span1Status == true) {
-    // post to firebase
-    // firebaseRef.set("1");
-    firebaseRef.set(parseInt("0"));
+  var xhr = new XMLHttpRequest();
+  xhr.open("PUT", firebaseURL);
+  xhr.setRequestHeader("Content-Type", "application/json");
+
+  if (Span1Status) {
+    xhr.send(JSON.stringify(1)); // Gửi giá trị 1 khi nút được kích hoạt
   } else {
-    // firebaseRef.set("0");
-    firebaseRef.set(parseInt("1"));
+    xhr.send(JSON.stringify(0)); // Gửi giá trị 0 khi nút không được kích hoạt
   }
 }
 
