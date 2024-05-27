@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 });
 
-// // Quạt
+// Quạt
 // function toggleButtonClickFan(numspan) {
 //   var Span1Status = document.getElementById("toggleFan" + numspan).checked;
 //   var firebaseRef = firebase
@@ -117,9 +117,9 @@ function toggleButtonClickFan(numspan) {
   xhr.setRequestHeader("Content-Type", "application/json");
 
   if (Span1Status) {
-    xhr.send(JSON.stringify(1)); // Gửi giá trị 1 khi nút được kích hoạt
+    xhr.send(JSON.stringify(0)); // Gửi giá trị 1 khi nút được kích hoạt
   } else {
-    xhr.send(JSON.stringify(0)); // Gửi giá trị 0 khi nút không được kích hoạt
+    xhr.send(JSON.stringify(1)); // Gửi giá trị 0 khi nút không được kích hoạt
   }
 }
 
